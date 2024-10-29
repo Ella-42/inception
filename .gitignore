@@ -1,0 +1,5 @@
+# Private environment variables
+.env
+
+# Private keys
+*.pem
