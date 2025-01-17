@@ -1,18 +1,21 @@
-version: '3'
+version: '3.7'
+
 services:
-  nginx:
-    image: nginx
-    volumes:
-      - ./static:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  webserver:
+    image: nginx:latest
+    container_name: webserver
     ports:
       - "80:80"
-    depends_on:
-      - inception
-
-  inception:
-    image: nginx
+      - "443:443"
+    restart: always
     volumes:
-      - ./app:/usr/share/nginx/html:ro
-    expose:
-      - "8000"
+      - ./static:/var/www/html:ro
+      - /etc/ssl/inception_ella-peeters_me:/etc/ssl/inception_ella-peeters_me:ro
+      - /home/lpeeters/.ssh/ella-peeters.me.key:/etc/ssh/ella-peeters.me.key:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+
+  #inception:
+    #image: nginx:latest
+    #container_name: inception
+    #expose:
+      #- "8000"
