@@ -1,0 +1,73 @@
+version: '3.7'
+
+services:
+
+  # Frontend
+  nginx:
+    container_name: nginx
+    build: ./nginx
+    restart: on-failure:3
+    environment:
+      - domain=inception.ella-peeters.me
+    depends_on:
+      - wordpress
+    networks:
+      - frontend #Connects to WordPress
+    ports:
+      - "80:80" #Http (-> https)
+      - "443:443" #Https
+    volumes:
+      - wordpress_database:/var/www/html #Mount WordPress files to link with Wordpress
+      - /etc/ssl/inception_ella-peeters_me:/etc/ssl/inception_ella-peeters_me:ro #Mount SSL certificate
+      - /home/lpeeters/.ssh/ella-peeters.me.key:/etc/ssh/ella-peeters.me.key:ro #Mount SSH key
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro #Mount Nginx configuration
+
+  # Frontend and backend
+  wordpress:
+    container_name: wordpress
+    build: ./wordpress
+    restart: on-failure:3
+    env_file: .env #Users and passwords
+    environment:
+      - domain=inception.ella-peeters.me
+      - WP_CLI_ALLOW_ROOT=1 #Allow root for WordPress command line interface
+    depends_on:
+      - mariadb
+    networks:
+      - frontend #Connects to Nginx
+      - backend #Connects to MariaDB
+    volumes:
+      - wordpress_database:/var/www/html #Mount WordPress files to link with Nginx
+
+  # Backend database
+  mariadb:
+    container_name: mariadb
+    build: ./mariadb
+    restart: on-failure:3
+    env_file: .env #Users and passwords
+    networks:
+      - backend #Connects to WordPress
+    volumes:
+      - maria_database:/var/lib/mysql #Mount SQL database
+
+# Mounted local files
+volumes:
+
+  # Local mount for WordPress (~/data/wordpress)
+  wordpress_database:
+    driver_opts:
+      type: none
+      o: bind
+      device: $HOME/data/wordpress
+
+  # Local mount for MariaDB (~/data/mariadb)
+  maria_database:
+    driver_opts:
+      type: none
+      o: bind
+      device: $HOME/data/mariadb
+
+# Split frontend and backend
+networks:
+  frontend:
+  backend:
